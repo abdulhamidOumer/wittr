@@ -43,8 +43,12 @@ self.addEventListener('fetch', function(event) {
       event.respondWith(caches.match('/skeleton'));
       return;
     }
-    if (requestUrl.pathname.startsWith('/photos/')) {
+    if(requestUrl.pathname.startsWith('/photos/')) {
       event.respondWith(servePhoto(event.request));
+      return;
+    }
+    if(requestUrl.pathname.startsWith('/avatars/')){
+      event.respondWith(serveAvatar(event.request));
       return;
     }
     // TODO: respond to avatar urls by responding with
@@ -65,7 +69,25 @@ function serveAvatar(request) {
   // Use this url to store & match the image in the cache.
   // This means you only store one copy of each avatar.
   var storageUrl = request.url.replace(/-\dx\.jpg$/, '');
+  return caches.open(contentImgsCache).then(function(cache){
+    return cache.match(storageUrl).then(function(responnse){
+      if(responnse){
+        var myResponse = responnse;
+        fetch(request).then(function(newResponse){
+          console.log("Updated Avatar!!");
+          cache.delete(myResponse);
+          cache.put(storageUrl,newResponse.clone());
+          myResponse = newResponse;
+        }).catch(function(){console.log("Eroor!!");});
+        return myResponse;
+      }
 
+      return fetch(request).then(function(newResponse){
+        cache.put(storageUrl,newResponse.clone());
+        return newResponse;
+      });
+    });
+  });
   // TODO: return images from the "wittr-content-imgs" cache
   // if they're in there. But afterwards, go to the network
   // to update the entry in the cache.

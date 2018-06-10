@@ -6,7 +6,7 @@ function openDatabase() {
   // If the browser doesn't support service worker,
   // we don't care about having a database
   if (!navigator.serviceWorker) {
-    return Promise.resolve();
+    console.log("Service worker not supported");
   }
 
   return idb.open('wittr', 1, function(upgradeDb) {
